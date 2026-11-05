@@ -1,3 +1,4 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -56,6 +57,19 @@ select{background:var(--panel2);color:#fff;border:1px solid var(--line);border-r
 .btn{background:var(--panel2);color:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;font-size:13px}.btn:hover{border-color:var(--accent)}
 dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:16px;padding:20px;width:min(340px,90vw)}dialog::backdrop{background:rgba(0,0,0,.7)}
 dialog input{display:block;width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:#fff;margin:8px 0;padding:9px}
+#res{width:min(700px,100%);margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 0 calc(30px*var(--gi)) color-mix(in srgb,var(--glow) 25%,transparent)}
+#res .rh{display:flex;justify-content:space-between;align-items:center;color:var(--mute);font-size:12px;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px}
+#res .rh b{cursor:pointer;font-size:18px;color:#5d6a98}#res .rh b:hover{color:#fff}
+#res .rb{font-size:14px;color:var(--mute)}
+#res .ans{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;color:var(--text)}
+#res .ans small{display:block;color:var(--accent);letter-spacing:2px;text-transform:uppercase;font-size:10px;margin-bottom:4px}
+#res .ans p{margin:0;font-size:14px;line-height:1.5}
+#res .hit{display:block;padding:10px 8px;border-radius:12px;text-decoration:none;color:var(--text);transition:.15s}
+#res .hit:hover{background:var(--panel2)}
+#res .hit span{display:block;font-size:12px;color:var(--mute)}
+#res .hit strong{display:block;font-size:16px;margin:2px 0;color:color-mix(in srgb,var(--glow) 40%,#fff)}
+#res .hit p{margin:0;font-size:13px;color:var(--mute);line-height:1.45}
+#res .err{color:#ff7b8f;line-height:1.5}
 @media(max-width:560px){.side{width:48px}.clock{display:none}}
 </style></head><body>
 <div id="wall"></div><canvas id="fx"></canvas>
@@ -69,11 +83,12 @@ dialog input{display:block;width:100%;background:var(--panel2);border:1px solid 
 <div class="greet" id="greet"></div><h1>DeepLens</h1><div class="tag">See deeper. Search faster.</div>
 <form class="bar" onsubmit="return go(event)"><select id="eng"></select><input id="q" autocomplete="off" placeholder="Search, type a URL, math, or !yt cats"><button class="go">Search</button></form>
 <div class="calc" id="calc"></div><div class="chips" id="chips"></div>
+<div id="res" class="hide"></div>
 <div class="tiles" id="tiles"></div>
 <div class="widgets"><div class="card" id="wn"><h3>Notes</h3><textarea id="notes" placeholder="Quick notes, saved on this device"></textarea></div>
 <div class="card" id="wt"><h3>To-do</h3><input id="ti" placeholder="Add a task, press Enter"><div id="tl"></div></div></div>
 </main>
- 
+
 <aside id="panel"><h2>Customize DeepLens</h2>
 <h4>Colors</h4>
 <div class="row">Accent <input type="color" id="accent"></div>
@@ -104,13 +119,17 @@ dialog input{display:block;width:100%;background:var(--panel2);border:1px solid 
 <div class="row">URL (use %s) <input type="text" id="curl" placeholder="https://x.com/?q=%s"></div>
 <div class="row"><button class="btn" onclick="addEng()">Add engine</button></div>
 <div class="row">Open in new tab <input type="checkbox" id="nt"></div>
+<h4>Results inside DeepLens</h4>
+<div class="row">Show results here <input type="checkbox" id="inapp"></div>
+<div class="row">Tavily API key <input type="password" id="tkey" placeholder="tvly-..." autocomplete="off" style="width:150px;background:var(--panel2);color:#fff;border:1px solid var(--line);border-radius:8px;padding:6px"></div>
+<p style="font-size:12px;color:var(--mute)">Get a free key at tavily.com. It is saved only on this device. Bangs like !yt still open the other site.</p>
 <p style="font-size:12px;color:var(--mute)">Bangs: !g Google · !ddg DuckDuckGo · !b Bing · !br Brave · !yt YouTube · !w Wikipedia · !gh GitHub · !r Reddit · !maps Maps</p>
 <h4>Data</h4>
 <div class="row"><button class="btn" onclick="exp()">Export</button><button class="btn" onclick="imf.click()">Import</button><button class="btn" onclick="if(confirm('Reset everything?')){S=JSON.parse(JSON.stringify(D));sv();init()}">Reset</button></div>
 <input type="file" id="imf" accept=".json" class="hide">
 <div class="row"><button class="btn" onclick="panel.classList.remove('open')">Close</button></div>
 </aside>
- 
+
 <aside id="tools"><h2>Tools</h2>
 <h4>Focus timer</h4><div class="row"><span id="tm" style="font-size:30px;font-weight:300">25:00</span><span><button class="btn" id="tmb" onclick="tmGo()">Start</button> <button class="btn" onclick="tmReset()">Reset</button></span></div><div class="row">Minutes <input type="text" id="tmin" value="25" style="width:60px"></div>
 <h4>Stopwatch</h4><div class="row"><span id="sw" style="font-size:24px;font-weight:300">0.0s</span><span><button class="btn" id="swb" onclick="swGo()">Start</button> <button class="btn" onclick="swReset()">Reset</button></span></div>
@@ -121,12 +140,12 @@ dialog input{display:block;width:100%;background:var(--panel2);border:1px solid 
 <div class="row"><button class="btn" onclick="toggleP('')">Close</button></div></aside>
 <dialog id="dlg"><b>Add shortcut</b><input id="nm" placeholder="Name"><input id="ur" placeholder="example.com">
 <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="dlg.close()">Cancel</button><button class="btn" onclick="saveTile()">Add</button></div></dialog>
- 
+
 <script>
 const $=i=>document.getElementById(i),R=document.documentElement.style;
 const E0=[["Google","https://www.google.com/search?q=%s"],["DuckDuckGo","https://duckduckgo.com/?q=%s"],["Brave Search","https://search.brave.com/search?q=%s"],["Bing","https://www.bing.com/search?q=%s"],["Startpage","https://www.startpage.com/do/search?q=%s"],["Ecosia","https://www.ecosia.org/search?q=%s"],["YouTube","https://www.youtube.com/results?search_query=%s"],["Wikipedia","https://en.wikipedia.org/w/index.php?search=%s"],["GitHub","https://github.com/search?q=%s"],["Reddit","https://www.reddit.com/search/?q=%s"]];
 const BANG={g:0,ddg:1,br:2,b:3,yt:6,w:7,gh:8,r:9,maps:"https://www.google.com/maps/search/%s"};
-const D={accent:"#ffffff",glow:"#1b3cff",gi:1,bgs:"glow",bg:"#02040c",wall:"",dim:.4,parts:true,font:"",round:"999px",ts:96,stiles:true,snotes:true,stodo:true,shist:true,sclk:true,h24:false,name:"",deng:0,engs:[],nt:true,tiles:[["Google","https://www.google.com"],["YouTube","https://www.youtube.com"],["Docs","https://docs.google.com"],["Classroom","https://classroom.google.com"],["Wikipedia","https://www.wikipedia.org"],["Maps","https://maps.google.com"]],hist:[],notes:"",todo:[]};
+const D={accent:"#ffffff",glow:"#1b3cff",gi:1,bgs:"glow",bg:"#02040c",wall:"",dim:.4,parts:true,font:"",round:"999px",ts:96,stiles:true,snotes:true,stodo:true,shist:true,sclk:true,h24:false,name:"",deng:0,engs:[],nt:true,inapp:true,tkey:"",tiles:[["Google","https://www.google.com"],["YouTube","https://www.youtube.com"],["Docs","https://docs.google.com"],["Classroom","https://classroom.google.com"],["Wikipedia","https://www.wikipedia.org"],["Maps","https://maps.google.com"]],hist:[],notes:"",todo:[]};
 let S;try{S=Object.assign(JSON.parse(JSON.stringify(D)),JSON.parse(localStorage.getItem("dl2")||"{}"))}catch(e){S=JSON.parse(JSON.stringify(D))}
 function sv(){try{localStorage.setItem("dl2",JSON.stringify(S))}catch(e){}}
 const engs=()=>E0.concat(S.engs);
@@ -150,7 +169,31 @@ function go(e){e.preventDefault();let s=$("q").value.trim();if(!s)return false;
  const tm=S.tiles.find(t=>t[0].toLowerCase()===s.toLowerCase());if(tm)return open_(tm[1]),false;if(isUrl(s))return open_(/^https?:\/\//i.test(s)?s:"https://"+s),false;
  let t=engs()[$("eng").value][1];const m=s.match(/^!(\w+)\s+(.+)/);
  if(m&&m[1] in BANG){const b=BANG[m[1]];t=typeof b==="number"?engs()[b][1]:b;s=m[2]}
+ if(!(m&&m[1] in BANG)&&S.inapp&&S.tkey.trim()){S.hist=[s,...S.hist.filter(x=>x!==s)].slice(0,8);sv();rChips();tav(s,t);return false}
  S.hist=[s,...S.hist.filter(x=>x!==s)].slice(0,8);sv();rChips();open_(t.replace("%s",encodeURIComponent(s)));return false}
+function el(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+async function tav(q,fallback){
+ const r=$("res");r.classList.remove("hide");r.innerHTML="";
+ const h=el("div","rh");h.appendChild(el("span",0,"Results for “"+q+"”"));
+ const x=el("b",0,"×");x.onclick=()=>r.classList.add("hide");h.appendChild(x);r.appendChild(h);
+ const body=el("div","rb","Searching…");r.appendChild(body);
+ const fail=(msg)=>{body.className="rb err";body.textContent=msg+" ";const b=el("button","btn","Search the web instead");b.type="button";b.onclick=()=>open_(fallback.replace("%s",encodeURIComponent(q)));body.appendChild(b)};
+ try{
+  const resp=await fetch("https://api.tavily.com/search",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+S.tkey.trim()},body:JSON.stringify({query:q,max_results:8,include_answer:"basic"})});
+  if(resp.status===401||resp.status===403)return fail("Tavily rejected the API key. Check it in Settings.");
+  if(resp.status===429||resp.status===432||resp.status===433)return fail("You have used up your free Tavily searches for now.");
+  if(!resp.ok)return fail("Tavily returned an error ("+resp.status+").");
+  const d=await resp.json();body.textContent="";body.className="rb";
+  if(d.answer){const a=el("div","ans");a.appendChild(el("small",0,"Quick answer"));a.appendChild(el("p",0,d.answer));body.appendChild(a)}
+  const L=(d.results||[]).filter(it=>/^https?:\/\//i.test(it.url));
+  if(!L.length&&!d.answer)return fail("No results found.");
+  L.forEach(it=>{const a=el("a","hit");a.href=it.url;a.target="_blank";a.rel="noopener";
+   let dom=it.url;try{dom=new URL(it.url).hostname.replace(/^www\./,"")}catch(e){}
+   a.appendChild(el("span",0,dom));a.appendChild(el("strong",0,it.title||it.url));
+   const c=(it.content||"").slice(0,220);if(c)a.appendChild(el("p",0,c+(it.content.length>220?"…":"")));
+   body.appendChild(a)});
+ }catch(e){fail("Could not reach Tavily from this page. The page may be blocked from calling it, or you are offline.")}
+}
 function rChips(){$("chips").innerHTML="";S.hist.forEach(h=>{const c=document.createElement("span");c.className="chip";c.textContent=h;c.onclick=()=>{$("q").value=h;$("q").focus()};$("chips").appendChild(c)})}
 function rTiles(){const b=$("tiles");b.innerHTML="";S.tiles.forEach((t,i)=>{const a=document.createElement("a");a.className="tile";a.href=t[1];a.target="_blank";a.rel="noopener";a.innerHTML='<i></i><span></span><em class="x">×</em>';a.querySelector("i").textContent=t[0][0].toUpperCase();a.querySelector("span").textContent=t[0];a.querySelector(".x").onclick=ev=>{ev.preventDefault();ev.stopPropagation();S.tiles.splice(i,1);sv();rTiles()};b.appendChild(a)});const a=document.createElement("div");a.className="tile add";a.innerHTML="<i>+</i><span>Add</span>";a.onclick=openAdd;b.appendChild(a)}
 function openAdd(){$("nm").value=$("ur").value="";$("dlg").showModal()}
@@ -161,14 +204,14 @@ $("notes").oninput=e=>{S.notes=e.target.value;sv()};
 $("q").oninput=()=>{const v=$("q").value.trim();let o="";if(/^[\d\s+\-*/().%^]+$/.test(v)&&/[+\-*/%^]/.test(v)){try{const r=Function('"use strict";return ('+v.replace(/\^/g,"**")+')')();if(isFinite(r))o="= "+r}catch(e){}}$("calc").textContent=o};
 // settings wiring
 const bind=(id,k,t)=>{const el=$(id);el.onchange=el.oninput=()=>{S[k]=t==="b"?el.checked:t==="n"?+el.value:el.value;sv();ap()}};
-[["accent","accent"],["glow","glow"],["gi","gi","n"],["bgs","bgs"],["bg","bg"],["dim","dim","n"],["parts","parts","b"],["font","font"],["round","round"],["ts","ts","n"],["stiles","stiles","b"],["snotes","snotes","b"],["stodo","stodo","b"],["shist","shist","b"],["sclk","sclk","b"],["h24","h24","b"],["name","name"],["nt","nt","b"]].forEach(a=>bind(a[0],a[1],a[2]));
+[["accent","accent"],["glow","glow"],["gi","gi","n"],["bgs","bgs"],["bg","bg"],["dim","dim","n"],["parts","parts","b"],["font","font"],["round","round"],["ts","ts","n"],["stiles","stiles","b"],["snotes","snotes","b"],["stodo","stodo","b"],["shist","shist","b"],["sclk","sclk","b"],["h24","h24","b"],["name","name"],["nt","nt","b"],["inapp","inapp","b"],["tkey","tkey"]].forEach(a=>bind(a[0],a[1],a[2]));
 $("deng").onchange=()=>{S.deng=+$("deng").value;$("eng").value=S.deng;sv()};$("eng").onchange=()=>{S.deng=+$("eng").value;$("deng").value=S.deng;sv()};
 function addEng(){const n=$("cname").value.trim(),u=$("curl").value.trim();if(!n||!u.includes("%s"))return alert("Name + URL containing %s needed");S.engs.push([n,u]);sv();fill();$("cname").value=$("curl").value=""}
 PRE.forEach(p=>{const s=document.createElement("span");s.style.background=`linear-gradient(135deg,${p[0]} 50%,${p[1]} 50%)`;s.onclick=()=>{S.accent=p[0];S.glow=p[1];sv();sync();ap()};$("presets").appendChild(s)});
 $("wf").onchange=e=>{const f=e.target.files[0];if(!f)return;const im=new Image();im.onload=()=>{const c=document.createElement("canvas"),k=Math.min(1,1400/im.width);c.width=im.width*k;c.height=im.height*k;c.getContext("2d").drawImage(im,0,0,c.width,c.height);S.wall=c.toDataURL("image/jpeg",.75);S.bgs="wall";sv();sync();ap()};im.src=URL.createObjectURL(f)};
 function exp(){const a=document.createElement("a");a.href="data:application/json,"+encodeURIComponent(JSON.stringify(S));a.download="deeplens-settings.json";a.click()}
 $("imf").onchange=e=>{const r=new FileReader();r.onload=()=>{try{S=Object.assign(JSON.parse(JSON.stringify(D)),JSON.parse(r.result));sv();init()}catch(x){alert("Invalid file")}};r.readAsText(e.target.files[0])};
-function sync(){["accent","glow","gi","bgs","bg","dim","font","round","ts","name"].forEach(k=>$(k).value=S[k]);["parts","stiles","snotes","stodo","shist","sclk","h24","nt"].forEach(k=>$(k).checked=S[k])}
+function sync(){["accent","glow","gi","bgs","bg","dim","font","round","ts","name","tkey"].forEach(k=>$(k).value=S[k]);["parts","stiles","snotes","stodo","shist","sclk","h24","nt","inapp"].forEach(k=>$(k).checked=S[k])}
 // particles
 let fxr=0;function fxOn(){const c=$("fx");c.style.display=S.parts?"block":"none";if(S.parts&&!fxr){fxr=1;const x=c.getContext("2d");let P=[];const rs=()=>{c.width=innerWidth;c.height=innerHeight;P=Array.from({length:50},()=>({x:Math.random()*c.width,y:Math.random()*c.height,v:.15+Math.random()*.4,s:1+Math.random()*2}))};rs();addEventListener("resize",rs);(function f(){x.clearRect(0,0,c.width,c.height);if(S.parts){x.fillStyle=S.accent;P.forEach(p=>{p.y-=p.v;if(p.y<0){p.y=c.height;p.x=Math.random()*c.width}x.globalAlpha=.35;x.beginPath();x.arc(p.x,p.y,p.s,0,7);x.fill()})}requestAnimationFrame(f)})()}}
 function init(){fill();sync();$("notes").value=S.notes;rChips();rTiles();rTodo();ap()}
@@ -193,4 +236,5 @@ $("wc").oninput=()=>{const t=$("wc").value.trim(),w=t?t.split(/\s+/).length:0;$(
 function rnd(n){$("rout").textContent=n===2?(Math.random()<.5?"Heads":"Tails"):"Rolled "+(1+Math.floor(Math.random()*n))}
 init();setInterval(tick,10000);
 </script></body></html>
- 
+
+</body></html>
